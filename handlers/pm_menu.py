@@ -22,7 +22,7 @@ async def start_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     buttons = [
         [InlineKeyboardButton("\U0001F4DD Lapor Tugas", callback_data="menu_lapor")],
         [InlineKeyboardButton("\u274C Batalkan Laporan", callback_data="menu_batalkan")],
-        [InlineKeyboardButton("\U0001F624 Ajukan Keluhan", callback_data="menu_keluhan")],
+        # [InlineKeyboardButton("\U0001F624 Ajukan Keluhan", callback_data="menu_keluhan")],
     ]
 
     if admin_info:
@@ -30,11 +30,11 @@ async def start_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
         buttons.append([InlineKeyboardButton("\u2753 Help", callback_data="menu_help")])
 
     if admin_info and admin_info.get("managed_team") == "all":
-        buttons.append([InlineKeyboardButton("\U0001F4CB Lihat Keluhan", callback_data="menu_lihatkeluhan")])
-        buttons.append([InlineKeyboardButton("\u2795 Tambah Command Baru", callback_data="menu_tambahcommand")])
+        # buttons.append([InlineKeyboardButton("\U0001F4CB Lihat Keluhan", callback_data="menu_lihatkeluhan")])
         buttons.append([InlineKeyboardButton("\u23F0 Reminder", callback_data="menu_reminder")])
         buttons.append([InlineKeyboardButton("\U0001F6AB Revoke Akses", callback_data="menu_revoke")])
         buttons.append([InlineKeyboardButton("\U0001F465 Anggota", callback_data="menu_anggota")])
+        buttons.append([InlineKeyboardButton("\u2795 Tambah Command Baru", callback_data="menu_tambahcommand")])
 
     greeting = f"Hi {nama}, ada yang bisa saya bantu?\n\nPilih menu di bawah ini:"
     await update.message.reply_text(greeting, reply_markup=InlineKeyboardMarkup(buttons))
