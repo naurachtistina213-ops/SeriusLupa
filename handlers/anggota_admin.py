@@ -14,7 +14,10 @@ from sheets.admin import is_superadmin
 from sheets.anggota_detail import get_details, set_detail
 from sheets.users import get_team_members, list_team_names
 
-_DATE_FORMATS = ["%d-%m-%Y", "%Y-%m-%d", "%d/%m/%Y", "%Y/%m/%d"]
+_DATE_FORMATS = [
+    "%d-%m-%Y", "%Y-%m-%d", "%d/%m/%Y", "%Y/%m/%d",
+    "%d-%b-%Y", "%d %b %Y", "%d-%B-%Y", "%d %B %Y",
+]
 
 
 def _parse_date(value: str):
@@ -46,20 +49,25 @@ def _build_profile_text(member: dict, details: dict[str, str]) -> str:
         f"Username: @{member.get('username', '').lstrip('@')}" if member.get("username") else "Username: -",
         f"Team: {member.get('team_name', '-')}",
         f"User ID: {member.get('user_id', '-')}",
-        "",
     ]
+
+    # Skip field_name kosong (bisa kejadian kalau ada baris nggak lengkap
+    # di sheet anggota_detail)
+    details = {k: v for k, v in details.items() if k and k.strip()}
+
     if details:
+        lines.append("\n\U0001F4CB Data Tambahan:")
         for field_name, field_value in details.items():
             if field_name.lower() == "tanggal_join":
                 lines.append(f"Tanggal Join: {field_value}")
                 join_date = _parse_date(field_value)
                 if join_date:
-                    lines.append(f"Lama Bekerja: {_describe_tenure(join_date)}")
+                    lines.append(f"Masa Kerja: {_describe_tenure(join_date)}")
             else:
                 label = field_name.replace("_", " ").title()
                 lines.append(f"{label}: {field_value}")
     else:
-        lines.append("(belum ada data tambahan)")
+        lines.append("\n(belum ada data tambahan)")
     return "\n".join(lines)
 
 
