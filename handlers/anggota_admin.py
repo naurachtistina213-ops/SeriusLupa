@@ -5,42 +5,13 @@ lihat profil (nama, username, + semua field tambahan dari sheet
 field 'tanggal_join' kalau ada). Ada tombol buat nambah/update field
 baru, jadi ke depannya bisa nambah data apa aja tanpa ubah kode.
 """
-from datetime import datetime
-
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
 from sheets.admin import is_superadmin
 from sheets.anggota_detail import get_details, set_detail
-from sheets.users import get_team_members, list_team_names
-
-_DATE_FORMATS = [
-    "%d-%m-%Y", "%Y-%m-%d", "%d/%m/%Y", "%Y/%m/%d",
-    "%d-%b-%Y", "%d %b %Y", "%d-%B-%Y", "%d %B %Y",
-]
-
-
-def _parse_date(value: str):
-    for fmt in _DATE_FORMATS:
-        try:
-            return datetime.strptime(value.strip(), fmt)
-        except (ValueError, AttributeError):
-            continue
-    return None
-
-
-def _describe_tenure(join_date: datetime) -> str:
-    days = (datetime.now() - join_date).days
-    if days < 0:
-        return "-"
-    tahun, sisa_hari = divmod(days, 365)
-    bulan = sisa_hari // 30
-    parts = []
-    if tahun:
-        parts.append(f"{tahun} tahun")
-    if bulan:
-        parts.append(f"{bulan} bulan")
-    return " ".join(parts) if parts else "< 1 bulan"
+from sheets.users import find_member_by_id, get_team_members, list_team_names
+from utils.tenure import describe_tenure, parse_date
 
 
 def _build_profile_text(member: dict, details: dict[str, str]) -> str:
@@ -60,9 +31,9 @@ def _build_profile_text(member: dict, details: dict[str, str]) -> str:
         for field_name, field_value in details.items():
             if field_name.lower() == "tanggal_join":
                 lines.append(f"Tanggal Join: {field_value}")
-                join_date = _parse_date(field_value)
+                join_date = parse_date(field_value)
                 if join_date:
-                    lines.append(f"Masa Kerja: {_describe_tenure(join_date)}")
+                    lines.append(f"Masa Kerja: {describe_tenure(join_date)}")
             else:
                 label = field_name.replace("_", " ").title()
                 lines.append(f"{label}: {field_value}")
@@ -115,7 +86,7 @@ async def pick_member_callback(update: Update, context: ContextTypes.DEFAULT_TYP
         return
 
     user_id = int(query.data.split(":", 1)[1])
-    member = _find_member_anywhere(user_id)
+    member = find_member_by_id(user_id)
     if not member:
         await query.edit_message_text("Data karyawan ini nggak ketemu (mungkin baru dihapus).")
         return
@@ -127,13 +98,6 @@ async def pick_member_callback(update: Update, context: ContextTypes.DEFAULT_TYP
     ]])
     await query.edit_message_text(teks, reply_markup=buttons)
 
-
-def _find_member_anywhere(user_id: int) -> dict | None:
-    for team in list_team_names():
-        for m in get_team_members(team):
-            if int(m.get("user_id", 0)) == user_id:
-                return m
-    return None
 
 
 async def start_addfield_flow(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -172,7 +136,7 @@ async def handle_addfield_text(update: Update, context: ContextTypes.DEFAULT_TYP
         set_detail(user_id, field_name, text)
         context.user_data.clear()
 
-        member = _find_member_anywhere(user_id)
+        member = find_member_by_id(user_id)
         details = get_details(user_id)
         teks = "\u2705 Data berhasil disimpan.\n\n" + _build_profile_text(member, details)
         buttons = InlineKeyboardMarkup([[
