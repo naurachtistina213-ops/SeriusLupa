@@ -14,7 +14,7 @@ from sheets.teams import get_all_teams, get_canonical_name
 
 RESERVED_COMMANDS = {
     "start", "menu", "help", "getid", "listcommand", "lapor", "keluhan",
-    "sync", "tambahtipe", "brand", "archive",
+    "sync", "tambahtipe", "brand", "archive", "id",
 }
 
 
