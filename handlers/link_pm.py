@@ -6,7 +6,7 @@ dulu."""
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
-from sheets.admin import get_admin_info
+from sheets.admin import get_admin_info, get_managed_teams
 from sheets.resources import (format_categorized_reply, get_active_types,
                                get_brands_for_team_tipe, get_categorized_data)
 from sheets.users import list_team_names
@@ -20,16 +20,19 @@ async def start_link_flow(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text("Menu ini cuma buat admin/leader.")
         return
 
-    if admin_info.get("managed_team") == "all":
-        teams = list_team_names()
-        if not teams:
-            await query.edit_message_text("Belum ada team yang kedaftar di sheet 'anggota'.")
-            return
-        buttons = [[InlineKeyboardButton(t, callback_data=f"linkpm_team:{t}")] for t in teams]
-        await query.edit_message_text("Pilih team:", reply_markup=InlineKeyboardMarkup(buttons))
+    managed_teams = get_managed_teams(update.effective_user.id)  # None = superadmin (all)
+    teams = list_team_names() if managed_teams is None else managed_teams
+
+    if not teams:
+        await query.edit_message_text("Belum ada team yang di-assign ke kamu.")
         return
 
-    await _show_tipe_menu(query, admin_info.get("managed_team", ""))
+    if len(teams) == 1:
+        await _show_tipe_menu(query, teams[0])
+        return
+
+    buttons = [[InlineKeyboardButton(t, callback_data=f"linkpm_team:{t}")] for t in teams]
+    await query.edit_message_text("Pilih team:", reply_markup=InlineKeyboardMarkup(buttons))
 
 
 async def pick_team_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
