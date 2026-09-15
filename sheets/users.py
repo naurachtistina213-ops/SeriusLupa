@@ -38,6 +38,25 @@ def find_member(user_id: int, username: str | None):
     return None
 
 
+def find_member_by_id(user_id: int) -> dict | None:
+    """Cari anggota by user_id doang (tanpa perlu tau team-nya dulu).
+    Dipakai buat command /id dan menu Anggota."""
+    for row in _ws().get_all_records():
+        if to_int(row.get("user_id")) == user_id:
+            return row
+    return None
+
+
+def find_member_by_username(username: str) -> dict | None:
+    """Cari anggota by username Telegram ORANG LAIN (bukan diri sendiri
+    kayak find_member). Dipakai buat command /id."""
+    username = username.lstrip("@").lower()
+    for row in _ws().get_all_records():
+        if str(row.get("username", "")).lstrip("@").lower() == username:
+            return row
+    return None
+
+
 def get_team_members(team_name: str) -> list[dict]:
     """Ambil semua anggota dari 1 team, buat keperluan mass mention.
     Case-insensitive biar nggak kena masalah 'team1' vs 'Team1'."""
