@@ -35,3 +35,14 @@ def set_detail(user_id: int, field_name: str, field_value: str):
             ws.update_cell(i, 3, field_value)  # kolom ke-3 = field_value
             return
     ws.append_row([user_id, field_name, field_value])
+
+
+def find_user_id_by_field(field_name: str, field_value: str) -> int | None:
+    """Cari user_id berdasarkan value 1 field tertentu (misal cari
+    user_id yang uid_kantor-nya = 'EMP-2024-045'). Case-insensitive.
+    Dipakai buat command /id."""
+    for row in _ws().get_all_records():
+        if (row.get("field_name", "").lower() == field_name.lower()
+                and str(row.get("field_value", "")).strip().lower() == field_value.strip().lower()):
+            return to_int(row.get("user_id"))
+    return None
