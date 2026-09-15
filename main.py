@@ -10,9 +10,12 @@ from telegram.ext import (Application, CallbackQueryHandler, ChatMemberHandler,
 
 from config import TELEGRAM_BOT_TOKEN, validate_config
 from sheets.admin import is_superadmin
+from sheets.anggota_detail import find_user_id_by_field, get_details
 from sheets.chats_registry import reset_cache as reset_chats_registry_cache
-from sheets.client import reset_worksheet_cache
+from sheets.client import reset_worksheet_cache, to_int
 from sheets.resources import register_resource_type
+from sheets.users import find_member_by_id, find_member_by_username
+from utils.tenure import describe_tenure, parse_date
 from handlers.access_control import gatekeeper_callback, gatekeeper_message
 from handlers.addcommand_pm import addcommand_pick_team_callback, handle_addcommand_text
 from handlers.anggota_admin import (handle_addfield_text, pick_member_callback,
@@ -93,6 +96,54 @@ async def archive_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("\n".join(lines))
 
 
+async def id_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """/id <username_telegram atau UID_kantor> - khusus superadmin, cari
+    profil siapa aja (nggak cuma diri sendiri). Bisa dipanggil di PM
+    maupun grup."""
+    user = update.effective_user
+    if not is_superadmin(user.id):
+        await update.message.reply_text("Command ini cuma buat superadmin.")
+        return
+
+    parts = (update.message.text or "").split(maxsplit=1)
+    if len(parts) < 2:
+        await update.message.reply_text("Format: /id <username_telegram atau UID_kantor>")
+        return
+
+    query = parts[1].strip()
+
+    member = find_member_by_username(query)
+    if not member:
+        found_id = find_user_id_by_field("uid_kantor", query)
+        if found_id:
+            member = find_member_by_id(found_id)
+
+    if not member:
+        await update.message.reply_text(f"Nggak ketemu orang dengan username/UID Kantor '{query}'.")
+        return
+
+    member_user_id = to_int(member.get("user_id"))
+    details = get_details(member_user_id)
+    uid_kantor = details.get("uid_kantor", "-")
+    tanggal_join = details.get("tanggal_join", "-")
+
+    masa_kerja = "-"
+    if tanggal_join != "-":
+        join_date = parse_date(tanggal_join)
+        if join_date:
+            masa_kerja = describe_tenure(join_date)
+
+    username = member.get("username", "")
+    lines = [
+        f"\U0001F464 {member.get('nama', '?')}",
+        f"Username: @{username.lstrip('@')}" if username else "Username: -",
+        f"Uid Kantor: {uid_kantor}",
+        f"Tanggal Join: {tanggal_join}",
+        f"Masa Kerja: {masa_kerja}",
+    ]
+    await update.message.reply_text("\n".join(lines))
+
+
 async def sync_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Reset cache in-memory (chats_registry, dkk). Custom_commands, teams,
     anggota, dll SELALU baca live dari sheet tiap kali, jadi nggak perlu
@@ -161,6 +212,7 @@ def main():
     app.add_handler(CommandHandler("sync", sync_command))
     app.add_handler(CommandHandler("tambahtipe", tambahtipe_command))
     app.add_handler(CommandHandler("archive", archive_command))
+    app.add_handler(CommandHandler("id", id_command))
     app.add_handler(CallbackQueryHandler(menu_callback_router, pattern="^menu_"))
 
     # Flow lapor tugas
