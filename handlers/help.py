@@ -6,7 +6,7 @@ Flow 'Help' via PM - scoped per role:
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from sheets.admin import get_admin_info
+from sheets.admin import get_admin_info, get_managed_teams
 from sheets.custom_commands import get_all_commands
 from sheets.resources import get_active_types
 from sheets.teams import get_chat_for_team
@@ -60,7 +60,9 @@ async def start_help_flow(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await query.edit_message_text("Menu ini cuma buat admin/leader.")
         return
 
-    if admin_info.get("managed_team") == "all":
+    managed_teams = get_managed_teams(user.id)  # None = superadmin (all)
+
+    if managed_teams is None:
         team_names = list_team_names()
         sections = [build_team_section(t) for t in team_names] if team_names else ["(belum ada team kedaftar)"]
         admin_bagian = (
@@ -68,11 +70,15 @@ async def start_help_flow(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "/sync - reset cache\n"
             "/tambahtipe <tipe> <keterangan> - nambah tipe resource-lookup baru\n"
             "/brand <team> - lihat daftar brand 1 team\n"
-            "Menu PM: Reminder, Lihat Keluhan, Tambah Command Baru, Revoke Akses"
+            "/id <username/UID kantor> - cari profil karyawan\n"
+            "Menu PM: Reminder, Lihat Keluhan, Tambah Command Baru, Revoke Akses, Anggota"
         )
         teks = "\n\n".join(sections) + admin_bagian
+    elif managed_teams:
+        sections = [build_team_section(t) for t in managed_teams]
+        teks = "\n\n".join(sections)
     else:
-        teks = build_team_section(admin_info.get("managed_team", ""))
+        teks = "Belum ada team yang di-assign ke kamu."
 
     # Jaga-jaga batas panjang pesan Telegram (4096 karakter)
     await query.edit_message_text(teks[:4000])
