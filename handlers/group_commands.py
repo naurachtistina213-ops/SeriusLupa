@@ -33,7 +33,7 @@ from sheets.teams import get_all_teams, get_canonical_name, get_chat_for_team, g
 from sheets.users import get_all_members, get_team_members
 from utils.mention import build_mentions_for_members
 
-RESERVED_COMMANDS = {"start", "menu", "help", "getid", "listcommand", "lapor", "keluhan", "sync", "tambahtipe", "brand", "archive"}
+RESERVED_COMMANDS = {"start", "menu", "help", "getid", "listcommand", "lapor", "keluhan", "sync", "tambahtipe", "brand", "archive", "id"}
 ALL_KEYWORDS = {"all", "semua"}
 MAIN_KEYWORD = "main"
 
