@@ -68,10 +68,27 @@ def revoke_access(row_index: int):
 
 
 def can_manage_team(user_id: int, team_name: str) -> bool:
-    """Superadmin bisa manage semua team. Admin biasa cuma team dia sendiri.
-    Case-insensitive biar nggak kena masalah 'team1' vs 'Team1'."""
+    """Superadmin bisa manage semua team. Admin biasa cuma team yang
+    di-assign ke dia - bisa lebih dari 1, dipisah koma di kolom
+    managed_team (contoh: 'team2,team3'). Case-insensitive."""
     info = get_admin_info(user_id)
     if not info:
         return False
-    managed = str(info.get("managed_team", ""))
-    return managed == "all" or managed.lower() == team_name.lower()
+    managed = str(info.get("managed_team", "")).strip().lower()
+    if managed == "all":
+        return True
+    managed_list = [t.strip() for t in managed.split(",") if t.strip()]
+    return team_name.lower() in managed_list
+
+
+def get_managed_teams(user_id: int) -> list[str] | None:
+    """List nama team yang di-manage 1 admin/leader (bisa lebih dari 1).
+    Return None kalau superadmin (scope 'all', nggak dibatasin ke daftar
+    tertentu) - itu beda dari list kosong (nggak punya akses sama sekali)."""
+    info = get_admin_info(user_id)
+    if not info:
+        return []
+    managed = str(info.get("managed_team", "")).strip()
+    if managed.lower() == "all":
+        return None
+    return [t.strip() for t in managed.split(",") if t.strip()]
