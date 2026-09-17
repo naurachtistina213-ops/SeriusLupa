@@ -54,6 +54,9 @@ SHEET_SCHEMAS = {
     "logs": [
         "timestamp", "chat_id", "user_id", "aksi", "detail",
     ],
+    "link_canonical": [
+        "team_name", "kategori", "link", "keterangan", "ditambahkan_oleh", "ditambahkan_pada",
+    ],
 }
 
 
