@@ -29,6 +29,8 @@ from handlers.group_commands import (brand_command, handle_group_text,
 from handlers.keluhan import handle_keluhan_text, keluhan_confirm_callback
 from handlers.lapor import (handle_lapor_text, lapor_category_callback,
                              lapor_confirm_callback, lapor_skip_callback)
+from handlers.link_canonical_admin import (handle_add_text as handle_lcanon_add_text,
+                                            list_links_callback, start_add_flow)
 from handlers.link_pm import pick_brand_callback, pick_team_callback, pick_tipe_callback
 from handlers.pm_menu import menu_callback_router, start_menu
 from handlers.reminder_admin import (add_reminder_confirm_callback, edit_field_callback,
@@ -180,6 +182,8 @@ async def route_pm_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await handle_addcommand_text(update, context)
     elif flow == "anggota_addfield":
         await handle_addfield_text(update, context)
+    elif flow == "lcanon_add":
+        await handle_lcanon_add_text(update, context)
     # kalau flow lain (settings, dll) ditambah nanti, tinggal nambah elif di sini
 
 
@@ -250,6 +254,10 @@ def main():
     app.add_handler(CallbackQueryHandler(anggota_pick_team_callback, pattern="^anggota_team:"))
     app.add_handler(CallbackQueryHandler(pick_member_callback, pattern="^anggota_pick:"))
     app.add_handler(CallbackQueryHandler(start_addfield_flow, pattern="^anggota_addfield:"))
+
+    # Flow Link Canonical (PM, khusus superadmin)
+    app.add_handler(CallbackQueryHandler(list_links_callback, pattern="^lcanon_list$"))
+    app.add_handler(CallbackQueryHandler(start_add_flow, pattern="^lcanon_add$"))
 
     # Resource lookup (/link, /sosmed, dst) - pilih brand via tombol
     app.add_handler(CallbackQueryHandler(reslink_pick_callback, pattern="^reslink_pick:"))
